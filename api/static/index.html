@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Powerball Unique</title>
+  <style>
+    :root{
+      --red:#d0021b; /* Powerball red */
+      --black:#111;
+      --muted:#6b7280;
+      --bg:#ffffff;
+      --card:#ffffff;
+      --border:rgba(0,0,0,.08);
+      --shadow:0 10px 30px rgba(0,0,0,.08);
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:-apple-system, BlinkMacSystemFont, "Inter", "SF Pro Text", Roboto, Helvetica, Arial, sans-serif;
+      background:var(--bg); color:var(--black);
+      display:flex; justify-content:center; align-items:flex-start;
+      padding:24px;
+    }
+    .container{width:100%; max-width:860px;}
+
+    /* Header */
+    .hero{display:flex; align-items:flex-end; gap:14px; margin-bottom:20px;}
+    .balls{display:flex; gap:10px; align-items:center}
+    .ball{width:56px; height:56px; border-radius:50%; display:grid; place-items:center; font-weight:800; font-size:22px; box-shadow:inset 0 0 0 1px var(--border), 0 6px 16px rgba(0,0,0,.06)}
+    .ball.white{background:#fff; color:#000}
+    .ball.red{background:var(--red); color:#fff; box-shadow:0 6px 16px rgba(208,2,27,.35)}
+    .title{font-size:40px; font-weight:900; letter-spacing:.3px; margin:0; line-height:1; padding-bottom:6px}
+
+    /* Card */
+    .card{background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:16px;}
+
+    /* Controls */
+    .controls{display:flex; flex-wrap:wrap; gap:12px; align-items:center;}
+    .field{display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:999px; padding:6px 10px;}
+    .field label{font-size:13px; color:var(--muted)}
+    .field input{border:none; outline:none; font-size:16px; width:90px; text-align:center; background:transparent; padding:4px 2px}
+    .qty{display:flex; align-items:center; gap:8px}
+    .iconbtn{width:34px; height:34px; border-radius:999px; border:1px solid var(--border); background:#fff; display:grid; place-items:center; font-weight:800; cursor:pointer; user-select:none}
+    .iconbtn:active{transform:translateY(1px)}
+
+    .btn{border:none; background:var(--red); color:#fff; font-weight:700; padding:12px 16px; border-radius:999px; cursor:pointer; box-shadow:0 8px 20px rgba(208,2,27,.35);}
+    .btn:active{transform:translateY(1px)}
+
+    /* Status */
+    .status{margin-top:10px; font-size:13px; color:var(--muted)}
+
+    /* Results */
+    .results{margin-top:16px; display:flex; flex-direction:column; gap:10px; max-height:60vh; overflow:auto; padding-right:4px}
+    .row{display:flex; align-items:center; gap:10px}
+    .row .ball{width:44px; height:44px; font-size:18px}
+    .row .ball.red{box-shadow:0 6px 14px rgba(208,2,27,.32)}
+
+    @media (max-width:520px){
+      .ball{width:48px; height:48px; font-size:20px}
+      .title{font-size:32px}
+    }
+    .btn[disabled]{opacity:.6; pointer-events:none}
+    .btn.small{padding:8px 12px; border-radius:999px; font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header with POWER + red BALL and big "Generator" text aligned to bottoms -->
+    <div class="hero">
+      <div class="balls">
+        <div class="ball white">P</div>
+        <div class="ball white">O</div>
+        <div class="ball white">W</div>
+        <div class="ball white">E</div>
+        <div class="ball white">R</div>
+        <div class="ball red">BALL</div>
+      </div>
+      <h1 class="title">Generator</h1>
+    </div>
+
+    <div class="card">
+      <div class="controls">
+        <div class="field qty">
+          <label for="count">Count</label>
+          <button class="iconbtn" id="minus" aria-label="decrease count">−</button>
+          <input id="count" type="number" min="1" max="50" value="5" />
+          <button class="iconbtn" id="plus" aria-label="increase count">+</button>
+        </div>
+        <div class="field">
+          <label for="seed">Seed</label>
+          <input id="seed" type="number" placeholder="optional" />
+        </div>
+        <button class="btn" id="go">Generate</button>
+        <button class="btn" id="refresh">Refresh Data</button>
+      </div>
+      <div class="status" id="status">Ready</div>
+      <div class="results" id="out"></div>
+      <div class="controls" style="margin-top:12px;">
+        <button class="btn" id="copyAll">Copy All</button>
+        <button class="btn" id="shareAll">Share All</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const countEl = document.getElementById('count');
+    const seedEl = document.getElementById('seed');
+    const out = document.getElementById('out');
+    const statusEl = document.getElementById('status');
+    function fmtRow(d){
+      return `${d.white.join(', ')} | PB ${d.red}`;
+    }
+    function collectText(){
+      const lines = [];
+      out.querySelectorAll('.row').forEach(row => {
+        const nums = [...row.querySelectorAll('.ball.white')].map(b=>b.textContent.trim());
+        const red = row.querySelector('.ball.red')?.textContent.trim();
+        if(nums.length===5 && red) lines.push(`${nums.join(', ')} | PB ${red}`);
+      });
+      return lines.join('\n');
+    }
+    async function copyText(txt){
+      try{ await navigator.clipboard.writeText(txt); return true; } catch{ return false; }
+    }
+    async function shareText(txt){
+      if(navigator.share){
+        try{ await navigator.share({text: txt, title: 'Powerball Unique'}); return true; } catch{ return false; }
+      }
+      return false;
+    }
+
+    function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+
+    document.getElementById('minus').addEventListener('click', ()=>{
+      countEl.value = clamp((parseInt(countEl.value||'1',10)-1),1,50);
+    });
+    document.getElementById('plus').addEventListener('click', ()=>{
+      countEl.value = clamp((parseInt(countEl.value||'1',10)+1),1,50);
+    });
+
+    async function gen(){
+      const c = clamp(parseInt(countEl.value||'5',10),1,50);
+      const s = seedEl.value.trim();
+      const qs = new URLSearchParams({count: String(c)}); if (s) qs.set('seed', s);
+      statusEl.textContent = 'Generating…';
+      out.innerHTML = '';
+      try{
+        const url = new URL('/generate', window.location.origin);
+        url.search = qs.toString();
+        const res = await fetch(url.toString());
+        if(!res.ok){
+          const text = await res.text();
+          throw new Error(text || res.statusText);
+        }
+        const data = await res.json();
+        data.forEach(d => {
+          const row = document.createElement('div'); row.className = 'row';
+          d.white.forEach(n => {
+            const b = document.createElement('div'); b.className = 'ball white'; b.textContent = n; row.appendChild(b);
+          });
+          const r = document.createElement('div'); r.className = 'ball red'; r.textContent = d.red; row.appendChild(r);
+          const tools = document.createElement('button');
+          tools.className = 'btn small';
+          tools.textContent = 'Copy';
+          tools.addEventListener('click', ()=> copyText(fmtRow(d)));
+          row.appendChild(tools);
+          out.appendChild(row);
+        });
+        statusEl.textContent = `Generated ${data.length} unique picks`;
+      }catch(err){
+        statusEl.textContent = 'Error: ' + (err.message || err);
+      }
+    }
+    document.getElementById('go').addEventListener('click', gen);
+    document.getElementById('copyAll').addEventListener('click', async ()=>{
+      const txt = collectText();
+      if(!txt){ statusEl.textContent = 'Nothing to copy'; return; }
+      const ok = await copyText(txt);
+      statusEl.textContent = ok ? 'Copied all picks to clipboard' : 'Copy failed';
+    });
+    document.getElementById('shareAll').addEventListener('click', async ()=>{
+      const txt = collectText();
+      if(!txt){ statusEl.textContent = 'Nothing to share'; return; }
+      const ok = await shareText(txt);
+      if(!ok){
+        const fallback = await copyText(txt);
+        statusEl.textContent = fallback ? 'Sharing unavailable — copied to clipboard' : 'Share failed';
+      } else {
+        statusEl.textContent = 'Shared';
+      }
+    });
+    document.getElementById('refresh').addEventListener('click', async ()=>{
+      const btn = document.getElementById('refresh');
+      btn.disabled = true; statusEl.textContent = 'Refreshing…';
+      try{
+        const res = await fetch(new URL('/refresh', window.location.origin), {method:'POST'});
+        const data = await res.json();
+        if(!res.ok) throw new Error(data?.error || res.statusText);
+        statusEl.textContent = `Refreshed: +${data.rows_added} rows. Latest ${data.latest?.date || ''}`;
+      }catch(err){
+        statusEl.textContent = 'Refresh error: ' + (err.message || err);
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

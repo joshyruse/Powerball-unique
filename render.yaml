@@ -1,0 +1,10 @@
+# render.yaml
+services:
+  - type: web
+    name: powerball-unique
+    env: docker
+    plan: free
+    disk:
+      name: powerball-data
+      mountPath: /app/data
+      sizeGB: 1
