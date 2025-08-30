@@ -23,10 +23,16 @@
       display:flex; justify-content:center; align-items:flex-start;
       padding:24px;
     }
-    .container{width:100%; max-width:860px;}
+    .container{width:100%; max-width:400px;}
 
     /* Header */
-    .hero{display:flex; align-items:flex-end; gap:14px; margin-bottom:20px;}
+    .hero{
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
     .balls{display:flex; gap:10px; align-items:center}
     .ball{width:56px; height:56px; border-radius:50%; display:grid; place-items:center; font-weight:800; font-size:22px; box-shadow:inset 0 0 0 1px var(--border), 0 6px 16px rgba(0,0,0,.06)}
     .ball.white{background:#fff; color:#000}
@@ -38,9 +44,22 @@
 
     /* Controls */
     .controls{display:flex; flex-wrap:wrap; gap:12px; align-items:center;}
+    .controls + .controls { margin-top: 8px; }
     .field{display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:999px; padding:6px 10px;}
     .field label{font-size:13px; color:var(--muted)}
     .field input{border:none; outline:none; font-size:16px; width:90px; text-align:center; background:transparent; padding:4px 2px}
+    /* Make Count and Seed pills visually the same width */
+    .field.qty, .field.seed { min-width: 270px; }
+    .field.seed input { width: 120px; }
+    /* Hide default number input arrows */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield; /* Firefox */
+    }
     .qty{display:flex; align-items:center; gap:8px}
     .iconbtn{width:34px; height:34px; border-radius:999px; border:1px solid var(--border); background:#fff; display:grid; place-items:center; font-weight:800; cursor:pointer; user-select:none}
     .iconbtn:active{transform:translateY(1px)}
@@ -88,10 +107,14 @@
           <input id="count" type="number" min="1" max="50" value="5" />
           <button class="iconbtn" id="plus" aria-label="increase count">+</button>
         </div>
-        <div class="field">
-          <label for="seed">Seed</label>
-          <input id="seed" type="number" placeholder="optional" />
+      </div>
+      <div class="controls">
+        <div class="field seed">
+          <label for="seed">Seed <em>(optional)</em></label>
+          <input id="seed" type="number" />
         </div>
+      </div>
+      <div class="controls" style="margin-top:12px;">
         <button class="btn" id="go">Generate</button>
         <button class="btn" id="refresh">Refresh Data</button>
       </div>
@@ -99,7 +122,6 @@
       <div class="results" id="out"></div>
       <div class="controls" style="margin-top:12px;">
         <button class="btn" id="copyAll">Copy All</button>
-        <button class="btn" id="shareAll">Share All</button>
       </div>
     </div>
   </div>
@@ -123,12 +145,6 @@
     }
     async function copyText(txt){
       try{ await navigator.clipboard.writeText(txt); return true; } catch{ return false; }
-    }
-    async function shareText(txt){
-      if(navigator.share){
-        try{ await navigator.share({text: txt, title: 'Powerball Unique'}); return true; } catch{ return false; }
-      }
-      return false;
     }
 
     function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
@@ -179,17 +195,6 @@
       if(!txt){ statusEl.textContent = 'Nothing to copy'; return; }
       const ok = await copyText(txt);
       statusEl.textContent = ok ? 'Copied all picks to clipboard' : 'Copy failed';
-    });
-    document.getElementById('shareAll').addEventListener('click', async ()=>{
-      const txt = collectText();
-      if(!txt){ statusEl.textContent = 'Nothing to share'; return; }
-      const ok = await shareText(txt);
-      if(!ok){
-        const fallback = await copyText(txt);
-        statusEl.textContent = fallback ? 'Sharing unavailable — copied to clipboard' : 'Share failed';
-      } else {
-        statusEl.textContent = 'Shared';
-      }
     });
     document.getElementById('refresh').addEventListener('click', async ()=>{
       const btn = document.getElementById('refresh');

@@ -4,11 +4,6 @@ services:
     name: powerball-unique
     env: docker
     plan: free
-services:
-  - type: web
-    name: powerball-unique
-    env: docker
-    plan: free
 
 cronJobs:
   - name: refresh-after-draw
