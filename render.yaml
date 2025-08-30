@@ -1,14 +1,16 @@
 # render.yaml
 services:
+  # Your web service (Docker)
   - type: web
     name: powerball-unique
-    env: docker
+    runtime: docker
     plan: free
 
-cronJobs:
-  - name: refresh-after-draw
-    schedule: "0 7 * * 2,4,0"   # Tue, Thu, Sun at 07:00 UTC (~3am EDT / 2am EST)
-    env: docker
-    plan: free
+  # Your scheduled refresh (Cron)
+  - type: cron
+    name: refresh-after-draw
+    runtime: docker
+    plan: starter                 # cron jobs can't be free
+    schedule: "0 7 * * 2,4,0"     # Tue/Thu/Sun at 07:00 UTC (~3am ET)
     dockerCommand: >
-      sh -lc "curl -s -X POST $RENDER_EXTERNAL_URL/refresh >/dev/null || true"
+      sh -lc "echo 'cron ran at $(date)' && curl -s -X POST $RENDER_EXTERNAL_URL/refresh >/dev/null || true"
