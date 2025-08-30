@@ -4,6 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Powerball Unique</title>
+  <meta name="theme-color" content="#d0021b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link id="app-manifest" rel="manifest" href="#" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
   <style>
     :root{
       --red:#d0021b; /* Powerball red */
@@ -127,6 +132,76 @@
   </div>
 
   <script>
+    // --- Minimal PWA bootstrap: dynamic manifest + SW registration ---
+    (function(){
+      try{
+        // Build manifest dynamically (so we don't need a separate file on disk)
+        const manifest = {
+          name: "Powerball Unique",
+          short_name: "PB Unique",
+          start_url: "/?source=pwa",
+          scope: "/",
+          display: "standalone",
+          background_color: "#ffffff",
+          theme_color: "#d0021b",
+          icons: [
+            { src: "/static/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+            { src: "/static/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" }
+          ]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+        const url = URL.createObjectURL(blob);
+        const link = document.getElementById('app-manifest');
+        if(link) link.href = url;
+
+        // Register a lightweight Service Worker from a Blob
+        if('serviceWorker' in navigator){
+          const swCode = `
+            const CACHE_NAME = 'pb-unique-v1';
+            const API_PREFIX = ['/generate','/latest','/refresh'];
+            const toCache = [ '/', '/static/index.html' ];
+
+            self.addEventListener('install', (event) => {
+              event.waitUntil(
+                caches.open(CACHE_NAME).then(cache => cache.addAll(toCache)).then(() => self.skipWaiting())
+              );
+            });
+
+            self.addEventListener('activate', (event) => {
+              event.waitUntil(
+                caches.keys().then(keys => Promise.all(keys.map(k => k===CACHE_NAME?null:caches.delete(k))))
+              );
+            });
+
+            self.addEventListener('fetch', (event) => {
+              const req = event.request;
+              const url = new URL(req.url);
+              // Network-first for API calls; cache-first for static
+              const isAPI = API_PREFIX.some(p => url.pathname.startsWith(p));
+              if(isAPI){
+                event.respondWith(
+                  fetch(req).then(res => {
+                    return res;
+                  }).catch(() => caches.match(req))
+                );
+                return;
+              }
+              event.respondWith(
+                caches.match(req).then(cached => cached || fetch(req).then(res => {
+                  const respClone = res.clone();
+                  caches.open(CACHE_NAME).then(cache => cache.put(req, respClone));
+                  return res;
+                }))
+              );
+            });
+          `;
+          const swBlob = new Blob([swCode], {type:'text/javascript'});
+          const swURL = URL.createObjectURL(swBlob);
+          navigator.serviceWorker.register(swURL, { scope: '/' }).catch(()=>{});
+        }
+      }catch(e){ /* non-fatal */ }
+    })();
+    // --- End PWA bootstrap ---
     const countEl = document.getElementById('count');
     const seedEl = document.getElementById('seed');
     const out = document.getElementById('out');

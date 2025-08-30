@@ -82,5 +82,17 @@ draw.ellipse(red_bbox, fill=RED)
 # Fit the word "BALL" into the red circle (smaller font to fit four letters)
 draw_centered_text("BALL", red_bbox, WHITE, base_size=int(D * 0.38), max_width_pad=18)
 
+# Save original large master
+OUT = Path("assets/icon.png")
 img.save(OUT)
 print(f"wrote {OUT.resolve()}")
+
+# Also save resized icons for PWA
+icon_dir = Path("api/static/icons")
+icon_dir.mkdir(parents=True, exist_ok=True)
+
+for size in (192, 512):
+    resized = img.resize((size, size), Image.LANCZOS)
+    out_path = icon_dir / f"icon-{size}.png"
+    resized.save(out_path)
+    print(f"wrote {out_path.resolve()}")
