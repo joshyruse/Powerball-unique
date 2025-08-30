@@ -4,3 +4,16 @@ services:
     name: powerball-unique
     env: docker
     plan: free
+services:
+  - type: web
+    name: powerball-unique
+    env: docker
+    plan: free
+
+cronJobs:
+  - name: refresh-after-draw
+    schedule: "0 7 * * 2,4,0"   # Tue, Thu, Sun at 07:00 UTC (~3am EDT / 2am EST)
+    env: docker
+    plan: free
+    dockerCommand: >
+      sh -lc "curl -s -X POST $RENDER_EXTERNAL_URL/refresh >/dev/null || true"
