@@ -25,4 +25,5 @@ COPY scripts ./scripts
 COPY data ./data
 
 EXPOSE 8000
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# use the platform's PORT if set, else default to 8000 for local runs
+CMD ["sh", "-lc", "uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
