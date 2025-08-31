@@ -14,5 +14,5 @@ services:
     envVars:
       - key: TARGET_URL
         value: https://powerball-unique.onrender.com
-    command: >
+    dockerCommand: >
       sh -c 'echo "cron ran at $(date)" && curl -s -X POST "$TARGET_URL/refresh" >/dev/null || true'
