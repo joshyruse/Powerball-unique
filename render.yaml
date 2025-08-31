@@ -9,5 +9,5 @@ services:
     runtime: docker
     plan: starter
     schedule: "0 7 * * 2,4,0"   # Tue/Thu/Sun at 07:00 UTC (~3am ET)
-    command: >
+    startCommand: >
       sh -c 'echo "cron ran at $(date)" && curl -s -X POST "$RENDER_EXTERNAL_URL/refresh" >/dev/null || true'
