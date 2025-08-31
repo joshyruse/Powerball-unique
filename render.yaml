@@ -6,8 +6,13 @@ services:
 
   - type: cron
     name: refresh-after-draw
-    runtime: docker
+    runtime: image
     plan: starter
+    image:
+      url: curlimages/curl:8.8.0
     schedule: "0 7 * * 2,4,0"   # Tue/Thu/Sun at 07:00 UTC (~3am ET)
-    startCommand: >
-      sh -c 'echo "cron ran at $(date)" && curl -s -X POST "$RENDER_EXTERNAL_URL/refresh" >/dev/null || true'
+    envVars:
+      - key: TARGET_URL
+        value: https://powerball-unique.onrender.com
+    command: >
+      sh -c 'echo "cron ran at $(date)" && curl -s -X POST "$TARGET_URL/refresh" >/dev/null || true'
