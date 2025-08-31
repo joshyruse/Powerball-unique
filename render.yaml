@@ -9,10 +9,10 @@ services:
     runtime: image
     plan: starter
     image:
-      url: alpine:3.20
+      url: curlimages/curl:8.8.0
     schedule: "0 7 * * 2,4,0"   # Tue/Thu/Sun at 07:00 UTC (~3am ET)
     envVars:
       - key: TARGET_URL
         value: https://powerball-unique.onrender.com
     dockerCommand: >
-      sh -c 'echo "cron ran at $(date)" && wget -q --post-data="" "$TARGET_URL/refresh" -O - >/dev/null || true'
+      -s -S -X POST https://powerball-unique.onrender.com/refresh
