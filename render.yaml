@@ -14,5 +14,4 @@ services:
     envVars:
       - key: TARGET_URL
         value: https://powerball-unique.onrender.com
-    dockerCommand: >
-      -s -S -X POST https://powerball-unique.onrender.com/refresh
+    dockerCommand: curl -sS -X POST https://powerball-unique.onrender.com/refresh
